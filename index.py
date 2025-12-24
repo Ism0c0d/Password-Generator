@@ -1,6 +1,10 @@
 from tkinter import *
 from tkinter import messagebox
 import random
+import json
+
+
+
 
 class Index:
     def __init__(self):
@@ -20,12 +24,14 @@ class Index:
         logo_label = Label(self.window, image=self.logo)
         logo_label.grid(row=0, column=1,pady=30,sticky="SW", padx=(10,0))
 
-        #Website entry
+        #Website entries
         website_label = Label(self.window, text="Website:", font=('Inter',12, 'bold'))
-        website_entry = Entry(self.window, textvariable=self.web_var,font=('Inter',12),width=25)
+        website_entry = Entry(self.window, textvariable=self.web_var,font=('Inter',12),width=17)
         website_entry.focus()
+        search_button = Button(text="Search", command=self.search)
         website_label.grid(row=1, column=0, sticky="E")
-        website_entry.grid(row=1, column=1,columnspan=2, sticky= "W")
+        website_entry.grid(row=1, column=1, sticky= "W")
+        search_button.grid(row=1, column=2, sticky="E")
 
         #username entry
         username_label = Label(self.window, text="Email/Username:",font=('Inter',12, 'bold'))
@@ -49,17 +55,30 @@ class Index:
 
 
     def add(self):
-        website = self.web_var.get()
-        email = self.user_var.get()
-        password = self.pw_var.get()
+        website = self.web_var.get().strip().lower()
+        email = self.user_var.get().strip()
+        password = self.pw_var.get().strip()
+        new_entry ={
+            website:{
+                "email":email,
+                "password":password
+            }
+        }
         if not website or not email or not password:
             messagebox.showwarning(
                 title="Missing Info",
                 message="Please fill in all fields"
             )
             return
-        with open('file.txt',"a") as file:
-            file.write(f"{website} | {email} | {password}\n")
+        try:
+            with open("file.json","r") as file:
+                data = json.load(file)
+        except FileNotFoundError:
+            data = {}
+        data.update(new_entry)
+        with open("file.json", "w") as file:
+            json.dump(data, file,indent=4)
+
         self.web_var.set("")
         self.user_var.set("")
         self.pw_var.set("")
@@ -67,6 +86,7 @@ class Index:
             title="Saved",
             message="Your password has been saved!"
         )
+
     def generate(self):
         letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
                    'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
@@ -98,57 +118,28 @@ class Index:
         password = "".join(flattened_list)
         self.pw_var.set(password)
 
-
-home = Index()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# ---------------------------- PASSWORD GENERATOR ------------------------------- #
-
-"""""
+    def search(self):
+        website = self.web_var.get().strip().lower()
+        try:
+            with open("file.json", "r") as file:
+                data = json.load(file)
+        except FileNotFoundError:
+            messagebox.showwarning(
+                title="No saved password",
+                message="You have no saved password"
+            )
+        else:
+            try:
+                searched_data = data[website.lower()]
+            except KeyError as key:
+                messagebox.showwarning(
+                    title="No website found",
+                    message=f"There is m nb no saved website titled {key}"
+                )
+            else:
+                self.user_var.set(website.title())
+                self.user_var.set(searched_data["email"])
+                self.pw_var.set(searched_data["password"])
 
 
-
-print("Welcome to the PyPassword Generator!")
-nr_letters = int(input("How many letters would you like in your password?\n"))
-nr_symbols = int(input(f"How many symbols would you like?\n"))
-nr_numbers = int(input(f"How many numbers would you like?\n"))
-
-
-
-
-
-
-
-#Password generation
-print(password)
-
-result = ""
-for char in password:
-    result += char
-
-print(f"Your generated password is {result}")
-"""""
-
-# ---------------------------- SAVE PASSWORD ------------------------------- #
-
-
-# ---------------------------- UI SETUP ------------------------------- #
+app = Index()
